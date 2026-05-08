@@ -1,0 +1,7 @@
+﻿services:
+  szachuz:
+    image: szachuz
+    build:
+      context: .
+      dockerfile: SzachUZ/Dockerfile
+
