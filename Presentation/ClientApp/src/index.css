@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-bg text-ink antialiased;
+    font-family: theme('fontFamily.sans');
+  }
+
+  html.dark body {
+    @apply bg-bg-dark text-ink-dark;
+  }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-bg dark:ring-offset-bg-dark;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  .glass {
+    @apply rounded-2xl border border-white/40 bg-panel shadow-glass backdrop-blur-xl;
+  }
+
+  .dark .glass {
+    @apply border-white/10 bg-panel-dark shadow-glass-dark;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white shadow-md transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white/40 px-4 py-2 text-sm font-medium text-ink transition hover:bg-white/70 dark:border-white/10 dark:bg-white/5 dark:text-ink-dark dark:hover:bg-white/10;
+  }
+}

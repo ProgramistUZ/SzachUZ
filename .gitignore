@@ -70,3 +70,13 @@ secrets.json
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+## Node / frontend (Presentation/ClientApp)
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/.vite/
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*

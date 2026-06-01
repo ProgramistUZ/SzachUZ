@@ -1,0 +1,79 @@
+{
+  "app": {
+    "title": "SzachUZ"
+  },
+  "topbar": {
+    "join": "Join",
+    "code": "Code",
+    "settings": "Settings",
+    "language": "Language",
+    "theme": {
+      "light": "Light mode",
+      "dark": "Dark mode"
+    }
+  },
+  "board": {
+    "yourTurn": "Your move",
+    "opponentTurn": "Opponent's move",
+    "waiting": "Waiting for opponent…",
+    "check": "Check!",
+    "youWhite": "You play white",
+    "youBlack": "You play black"
+  },
+  "timer": {
+    "white": "White",
+    "black": "Black"
+  },
+  "popup": {
+    "settings": {
+      "title": "New game",
+      "time": "Game time",
+      "color": "Your color",
+      "white": "White",
+      "black": "Black",
+      "random": "Random",
+      "minutes": "min",
+      "start": "Start",
+      "cancel": "Cancel"
+    },
+    "join": {
+      "title": "Join a game",
+      "placeholder": "Enter game code",
+      "submit": "Join",
+      "cancel": "Cancel",
+      "invalid": "Invalid code"
+    },
+    "code": {
+      "title": "Your game code",
+      "hint": "Share this code with your opponent so they can join.",
+      "copy": "Copy code",
+      "copied": "Copied!",
+      "close": "Close"
+    },
+    "winner": {
+      "white": "White wins!",
+      "black": "Black wins!",
+      "draw": "Draw",
+      "rematch": "Rematch",
+      "close": "Close"
+    }
+  },
+  "chat": {
+    "title": "Chat",
+    "placeholder": "Type a message…",
+    "send": "Send",
+    "empty": "No messages yet"
+  },
+  "moves": {
+    "title": "Move history",
+    "white": "White",
+    "black": "Black",
+    "empty": "No moves yet"
+  },
+  "errors": {
+    "noConnection": "No connection to server",
+    "joinFailed": "Failed to join the game",
+    "createFailed": "Failed to create the game",
+    "generic": "An error occurred"
+  }
+}

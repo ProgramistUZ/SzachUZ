@@ -1,0 +1,79 @@
+{
+  "app": {
+    "title": "SzachUZ"
+  },
+  "topbar": {
+    "join": "Dołącz",
+    "code": "Kod",
+    "settings": "Ustawienia",
+    "language": "Język",
+    "theme": {
+      "light": "Tryb jasny",
+      "dark": "Tryb ciemny"
+    }
+  },
+  "board": {
+    "yourTurn": "Twój ruch",
+    "opponentTurn": "Ruch przeciwnika",
+    "waiting": "Oczekiwanie na przeciwnika…",
+    "check": "Szach!",
+    "youWhite": "Grasz białymi",
+    "youBlack": "Grasz czarnymi"
+  },
+  "timer": {
+    "white": "Białe",
+    "black": "Czarne"
+  },
+  "popup": {
+    "settings": {
+      "title": "Nowa gra",
+      "time": "Czas gry",
+      "color": "Twój kolor",
+      "white": "Białe",
+      "black": "Czarne",
+      "random": "Losowy",
+      "minutes": "min",
+      "start": "Rozpocznij",
+      "cancel": "Anuluj"
+    },
+    "join": {
+      "title": "Dołącz do gry",
+      "placeholder": "Wpisz kod gry",
+      "submit": "Dołącz",
+      "cancel": "Anuluj",
+      "invalid": "Nieprawidłowy kod"
+    },
+    "code": {
+      "title": "Twój kod gry",
+      "hint": "Udostępnij ten kod przeciwnikowi, aby dołączył do gry.",
+      "copy": "Skopiuj kod",
+      "copied": "Skopiowano!",
+      "close": "Zamknij"
+    },
+    "winner": {
+      "white": "Wygrały białe!",
+      "black": "Wygrały czarne!",
+      "draw": "Remis",
+      "rematch": "Rewanż",
+      "close": "Zamknij"
+    }
+  },
+  "chat": {
+    "title": "Czat",
+    "placeholder": "Napisz wiadomość…",
+    "send": "Wyślij",
+    "empty": "Brak wiadomości"
+  },
+  "moves": {
+    "title": "Historia ruchów",
+    "white": "Białe",
+    "black": "Czarne",
+    "empty": "Brak ruchów"
+  },
+  "errors": {
+    "noConnection": "Brak połączenia z serwerem",
+    "joinFailed": "Nie udało się dołączyć do gry",
+    "createFailed": "Nie udało się utworzyć gry",
+    "generic": "Wystąpił błąd"
+  }
+}
