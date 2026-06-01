@@ -25,6 +25,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+app.UseCors();
 app.UseRouting();
 
 app.MapHub<ChessHub>("/chesshub");
