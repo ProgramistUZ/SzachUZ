@@ -12,7 +12,7 @@ import type {
 } from './contracts';
 import { INITIAL_BOARD } from '@/lib/chess/board';
 
-type GameStatus = 'idle' | 'connecting' | 'lobby' | 'playing' | 'ended';
+export type GameStatus = 'idle' | 'connecting' | 'lobby' | 'playing' | 'ended';
 
 interface ChatMessage {
   id: string;
@@ -104,7 +104,7 @@ function reducer(state: ChessHubState, action: Action): ChessHubState {
         ...state,
         gameId: action.payload.gameId,
         playerColor: action.payload.color,
-        status: 'lobby',
+        status: state.status === 'playing' ? 'playing' : 'lobby',
         errorMessage: null,
       };
     case 'playerJoined':
@@ -114,7 +114,7 @@ function reducer(state: ChessHubState, action: Action): ChessHubState {
       const whiteAlive = findKingThreshold(board, 'white');
       const blackAlive = findKingThreshold(board, 'black');
       let winner: ChessHubState['winner'] = null;
-      let status = state.status;
+      let status: GameStatus = state.status === 'ended' ? 'ended' : 'playing';
       if (!whiteAlive && blackAlive) {
         winner = 'black';
         status = 'ended';
@@ -183,22 +183,48 @@ export function useChessHub(): UseChessHub {
     const connection = createConnection();
     connectionRef.current = connection;
 
-    connection.on('GameCreated', (data: GameCreatedPayload) =>
-      dispatch({ type: 'gameCreated', payload: data }),
-    );
-    connection.on('Joined', (data: JoinedPayload) => dispatch({ type: 'joined', payload: data }));
-    connection.on('PlayerJoined', () => dispatch({ type: 'playerJoined' }));
-    connection.on('MoveMade', (board: BoardState) =>
-      dispatch({ type: 'boardUpdate', payload: board }),
-    );
-    connection.on('ReciveMoves', (moves: PositionDto[]) =>
-      dispatch({ type: 'movesReceived', payload: moves }),
-    );
-    connection.on('UpdateTimer', (data: UpdateTimerPayload) =>
-      dispatch({ type: 'timerUpdate', payload: data }),
-    );
-    connection.on('ReciveMessage', (msg: string) => dispatch({ type: 'message', payload: msg }));
-    connection.on('Error', (msg: string) => dispatch({ type: 'error', payload: msg }));
+    const log = (event: string, payload: unknown) => {
+      if (import.meta.env.DEV) console.debug('[ChessHub]', event, payload);
+    };
+
+    connection.on('GameCreated', (data: GameCreatedPayload) => {
+      log('GameCreated', data);
+      window.sessionStorage.setItem('szachuz.joinCode', data.joinCode);
+      dispatch({ type: 'gameCreated', payload: data });
+    });
+    connection.on('Joined', (data: JoinedPayload) => {
+      log('Joined', data);
+      const savedCode = window.sessionStorage.getItem('szachuz.joinCode');
+      if (!savedCode) {
+        const fromUrl = new URLSearchParams(window.location.search).get('code');
+        if (fromUrl) window.sessionStorage.setItem('szachuz.joinCode', fromUrl);
+      }
+      dispatch({ type: 'joined', payload: data });
+    });
+    connection.on('PlayerJoined', (id: string) => {
+      log('PlayerJoined', id);
+      dispatch({ type: 'playerJoined' });
+    });
+    connection.on('MoveMade', (board: BoardState) => {
+      log('MoveMade', board);
+      dispatch({ type: 'boardUpdate', payload: board });
+    });
+    connection.on('ReciveMoves', (moves: PositionDto[]) => {
+      log('ReciveMoves', moves);
+      dispatch({ type: 'movesReceived', payload: moves });
+    });
+    connection.on('UpdateTimer', (data: UpdateTimerPayload) => {
+      log('UpdateTimer', data);
+      dispatch({ type: 'timerUpdate', payload: data });
+    });
+    connection.on('ReciveMessage', (msg: string) => {
+      log('ReciveMessage', msg);
+      dispatch({ type: 'message', payload: msg });
+    });
+    connection.on('Error', (msg: string) => {
+      log('Error', msg);
+      dispatch({ type: 'error', payload: msg });
+    });
 
     connection.onreconnecting(() => dispatch({ type: 'disconnected' }));
     connection.onreconnected(() => dispatch({ type: 'connected' }));
@@ -207,10 +233,23 @@ export function useChessHub(): UseChessHub {
     dispatch({ type: 'connecting' });
     connection
       .start()
-      .then(() => dispatch({ type: 'connected' }))
+      .then(async () => {
+        dispatch({ type: 'connected' });
+        const savedCode = window.sessionStorage.getItem('szachuz.joinCode');
+        if (savedCode) {
+          try {
+            await connection.invoke('JoinGame', savedCode);
+          } catch (err) {
+            if (import.meta.env.DEV) console.warn('[ChessHub] auto-rejoin failed:', err);
+            window.sessionStorage.removeItem('szachuz.joinCode');
+          }
+        }
+      })
       .catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : 'Connection failed';
-        dispatch({ type: 'error', payload: msg });
+        if (import.meta.env.DEV) {
+          console.warn('[ChessHub] connection failed:', err);
+        }
+        dispatch({ type: 'disconnected' });
       });
 
     return () => {
@@ -245,6 +284,7 @@ export function useChessHub(): UseChessHub {
     async (code) => {
       try {
         const connection = ensureConnected();
+        window.sessionStorage.setItem('szachuz.joinCode', code);
         await connection.invoke('JoinGame', code);
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'joinFailed';
@@ -258,6 +298,9 @@ export function useChessHub(): UseChessHub {
     async (from, to) => {
       const connection = connectionRef.current;
       const gameId = state.gameId;
+      if (import.meta.env.DEV) {
+        console.debug('[ChessHub] makeMove called', { gameId, from, to, hasConn: !!connection });
+      }
       if (!connection || !gameId) return;
       dispatch({ type: 'setLastMove', payload: { from, to } });
       try {

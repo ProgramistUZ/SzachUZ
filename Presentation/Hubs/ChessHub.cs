@@ -63,17 +63,21 @@ public class ChessHub : ChessHubBase
             var color = await _gameService.CheckPlayerColor(game.GameId, Context.ConnectionId);
 
             await Groups.AddToGroupAsync(Context.ConnectionId, game.GameId.ToString());
-            await Clients.Group(game.GameId.ToString()).SendAsync("PlayerJoined", Context.ConnectionId);
             await Clients.Caller.SendAsync("Joined", new
             {
                 gameId = game.GameId,
                 color = color.ToString().ToLower()
             });
+            await Clients.Group(game.GameId.ToString()).SendAsync("PlayerJoined", Context.ConnectionId);
 
             _logger.LogInformation("[{Method}]: Game {gameId} joined by player {id}", nameof(JoinGame), game.GameId,
                 Context.ConnectionId);
 
-            await CheckForStart(game, players);
+            var currentPlayers = await _gameService.GetPlayers(game.GameId);
+            if (currentPlayers != null)
+            {
+                await CheckForStart(game, currentPlayers);
+            }
         }
         catch (Exception ex)
         {
@@ -98,8 +102,8 @@ public class ChessHub : ChessHubBase
             return;
         }
 
-        var fromPosition = new Position(from.Row + 1, from.Col + 1);
-        var toPosition = new Position(to.Row + 1, to.Col + 1);
+        var fromPosition = UiToChess(from);
+        var toPosition = UiToChess(to);
 
         var isMoveMade = await _gameService.MakeMove(gameId, fromPosition, toPosition);
 
@@ -115,15 +119,19 @@ public class ChessHub : ChessHubBase
 
     public async Task GetAllMoves(Guid gameId, PositionDto fromDto)
     {
-        var from = new Position(fromDto.Row + 1, fromDto.Col + 1);
+        var from = UiToChess(fromDto);
 
         var moves = await _gameService.GetAllPossibleMoves(gameId, from, Context.ConnectionId);
 
         var returnMoves = moves
-            .Select(pos => new PositionDto(pos.Row - 1, pos.Col - 1))
+            .Select(ChessToUi)
             .ToList();
         await Clients.Caller.SendAsync("ReciveMoves", returnMoves);
     }
+
+    private static Position UiToChess(PositionDto dto) => new Position(8 - dto.Row, dto.Col + 1);
+
+    private static PositionDto ChessToUi(Position pos) => new PositionDto(8 - pos.Row, pos.Col - 1);
 
     public async Task CreateGame(string color, int gameLength)
     {

@@ -12,6 +12,13 @@
       "dark": "Tryb ciemny"
     }
   },
+  "status": {
+    "offline": "Brak połączenia",
+    "idle": "Gotowy",
+    "lobby": "Lobby — czeka na gracza",
+    "playing": "Gra w toku",
+    "ended": "Zakończono"
+  },
   "board": {
     "yourTurn": "Twój ruch",
     "opponentTurn": "Ruch przeciwnika",
@@ -22,7 +29,8 @@
   },
   "timer": {
     "white": "Białe",
-    "black": "Czarne"
+    "black": "Czarne",
+    "running": "Tyka"
   },
   "popup": {
     "settings": {
@@ -53,6 +61,7 @@
     "winner": {
       "white": "Wygrały białe!",
       "black": "Wygrały czarne!",
+      "blackSurprise": "??? wygrywa!",
       "draw": "Remis",
       "rematch": "Rewanż",
       "close": "Zamknij"

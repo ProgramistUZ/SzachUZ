@@ -12,6 +12,13 @@
       "dark": "Dark mode"
     }
   },
+  "status": {
+    "offline": "Offline",
+    "idle": "Ready",
+    "lobby": "Lobby — waiting for player",
+    "playing": "Game in progress",
+    "ended": "Finished"
+  },
   "board": {
     "yourTurn": "Your move",
     "opponentTurn": "Opponent's move",
@@ -22,7 +29,8 @@
   },
   "timer": {
     "white": "White",
-    "black": "Black"
+    "black": "Black",
+    "running": "Ticking"
   },
   "popup": {
     "settings": {
@@ -53,6 +61,7 @@
     "winner": {
       "white": "White wins!",
       "black": "Black wins!",
+      "blackSurprise": "??? wins!",
       "draw": "Draw",
       "rematch": "Rematch",
       "close": "Close"

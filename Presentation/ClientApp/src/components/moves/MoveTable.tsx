@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useEasterEgg } from '@/lib/easter-egg/hook';
+import { blackLabel } from '@/lib/easter-egg/labels';
 import { cn } from '@/lib/utils/cn';
 
 export interface MoveRow {
@@ -16,6 +18,7 @@ interface MoveTableProps {
 
 export function MoveTable({ moves, highlightLastRow = true }: MoveTableProps) {
   const { t } = useTranslation();
+  const { surprise } = useEasterEgg();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,7 +43,7 @@ export function MoveTable({ moves, highlightLastRow = true }: MoveTableProps) {
               <tr>
                 <th className="w-8" />
                 <th className="font-medium">{t('moves.white')}</th>
-                <th className="font-medium">{t('moves.black')}</th>
+                <th className="font-medium">{blackLabel(t('moves.black'), surprise)}</th>
               </tr>
             </thead>
             <tbody>

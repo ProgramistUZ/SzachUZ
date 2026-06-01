@@ -31,7 +31,10 @@ function App() {
   }, [state.joinCode, state.status]);
 
   useEffect(() => {
-    if (state.winner) setShowWinner(true);
+    if (state.winner) {
+      setShowWinner(true);
+      window.sessionStorage.removeItem('szachuz.joinCode');
+    }
   }, [state.winner]);
 
   const isPlayersTurn = state.whoseTurn === state.playerColor && state.status === 'playing';
@@ -48,6 +51,8 @@ function App() {
               onOpenCode={() => setShowCode(true)}
               onOpenSettings={() => setShowSettings(true)}
               hasJoinCode={state.joinCode !== null}
+              status={state.status}
+              isConnected={state.isConnected}
             />
             <LanguageSwitcher />
             <ThemeToggle />
@@ -75,7 +80,7 @@ function App() {
               seconds={state.playerColor === 'white' ? state.whiteTime : state.blackTime}
               isActive={state.whoseTurn === state.playerColor && state.status === 'playing'}
             />
-            <StatusBanner status={statusKey(state.status, isPlayersTurn)} />
+            <TurnIndicator status={state.status} isPlayersTurn={isPlayersTurn} />
           </>
         }
         sidePanel={
@@ -127,23 +132,41 @@ function App() {
   );
 }
 
-type StatusKey = 'yourTurn' | 'opponentTurn' | 'waiting' | null;
-
-function statusKey(
-  status: ReturnType<typeof useChessHub>['state']['status'],
-  isPlayersTurn: boolean,
-): StatusKey {
-  if (status === 'playing') return isPlayersTurn ? 'yourTurn' : 'opponentTurn';
-  if (status === 'lobby') return 'waiting';
-  return null;
-}
-
-function StatusBanner({ status }: { status: StatusKey }) {
+function TurnIndicator({
+  status,
+  isPlayersTurn,
+}: {
+  status: ReturnType<typeof useChessHub>['state']['status'];
+  isPlayersTurn: boolean;
+}) {
   const { t } = useTranslation();
-  if (!status) return null;
+  if (status !== 'playing' && status !== 'lobby') return null;
+  const key = status === 'lobby' ? 'waiting' : isPlayersTurn ? 'yourTurn' : 'opponentTurn';
+  const palette =
+    key === 'yourTurn'
+      ? 'border-success/50 bg-success/10 text-success'
+      : key === 'opponentTurn'
+        ? 'border-regal/50 bg-regal/10 text-regal dark:text-regal-dark'
+        : 'border-accent/50 bg-accent/10 text-accent dark:text-accent-dark';
   return (
-    <div className="text-sm font-medium uppercase tracking-wider text-muted dark:text-muted-dark">
-      {t(`board.${status}`)}
+    <div
+      className={`relative inline-flex items-center gap-3 rounded-full border-2 px-5 py-2.5 backdrop-blur-md ${palette}`}
+    >
+      {key !== 'waiting' && (
+        <span className="relative flex h-2.5 w-2.5">
+          <span
+            className={`absolute inline-flex h-full w-full animate-pulse-ring rounded-full opacity-70 ${
+              key === 'yourTurn' ? 'bg-success' : 'bg-regal'
+            }`}
+          />
+          <span
+            className={`relative inline-flex h-2.5 w-2.5 rounded-full ${
+              key === 'yourTurn' ? 'bg-success' : 'bg-regal'
+            }`}
+          />
+        </span>
+      )}
+      <span className="text-sm font-semibold uppercase tracking-[0.18em]">{t(`board.${key}`)}</span>
     </div>
   );
 }

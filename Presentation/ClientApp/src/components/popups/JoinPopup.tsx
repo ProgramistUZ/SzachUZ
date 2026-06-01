@@ -12,7 +12,7 @@ interface JoinPopupProps {
 }
 
 const MIN_CODE_LENGTH = 4;
-const VALID_CHARS = /^[A-Z0-9]*$/;
+const VALID_CHARS = /^[A-Za-z0-9]*$/;
 
 export function JoinPopup({ isOpen, onClose, onSubmit, errorMessage }: JoinPopupProps) {
   const { t } = useTranslation();
@@ -49,7 +49,7 @@ export function JoinPopup({ isOpen, onClose, onSubmit, errorMessage }: JoinPopup
           type="text"
           autoFocus
           value={code}
-          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          onChange={(e) => setCode(e.target.value)}
           placeholder={t('popup.join.placeholder')}
           aria-invalid={!isValid && code.length > 0}
           className={cn(

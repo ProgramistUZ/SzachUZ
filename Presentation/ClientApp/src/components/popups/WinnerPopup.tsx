@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Color } from '@/lib/signalr/contracts';
+import { useEasterEgg } from '@/lib/easter-egg/hook';
 import { Modal } from './Modal';
 
 interface WinnerPopupProps {
@@ -17,6 +18,7 @@ const BURSTS = 4;
 
 export function WinnerPopup({ isOpen, onClose, onRematch, winner }: WinnerPopupProps) {
   const { t } = useTranslation();
+  const { surprise } = useEasterEgg();
 
   useEffect(() => {
     if (!isOpen || winner === null || winner === 'draw') return;
@@ -48,18 +50,20 @@ export function WinnerPopup({ isOpen, onClose, onRematch, winner }: WinnerPopupP
 
   const titleKey: 'white' | 'black' | 'draw' =
     winner === 'white' ? 'white' : winner === 'black' ? 'black' : 'draw';
+  const titleText =
+    titleKey === 'black' && surprise
+      ? t('popup.winner.blackSurprise')
+      : t(`popup.winner.${titleKey}`);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={t(`popup.winner.${titleKey}`)}>
+    <Modal isOpen={isOpen} onClose={onClose} title={titleText}>
       <motion.div
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 260, damping: 22 }}
         className="flex flex-col items-center gap-6 py-2 text-center"
       >
-        <p className="font-display text-5xl font-semibold tracking-tight">
-          {t(`popup.winner.${titleKey}`)}
-        </p>
+        <p className="font-display text-5xl font-semibold tracking-tight">{titleText}</p>
         <div className="flex justify-center gap-2">
           {onRematch && (
             <motion.button

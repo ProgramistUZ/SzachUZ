@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -12,6 +14,8 @@
   body {
     @apply bg-bg text-ink antialiased;
     font-family: theme('fontFamily.sans');
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+    text-rendering: optimizeLegibility;
   }
 
   html.dark body {
@@ -20,6 +24,11 @@
 
   *:focus-visible {
     @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-bg dark:ring-offset-bg-dark;
+  }
+
+  ::selection {
+    background: theme('colors.accent.DEFAULT');
+    color: white;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -36,18 +45,77 @@
 
 @layer components {
   .glass {
-    @apply rounded-2xl border border-white/40 bg-panel shadow-glass backdrop-blur-xl;
+    @apply rounded-2xl border border-white/40 bg-panel shadow-glass backdrop-blur-2xl;
   }
 
   .dark .glass {
     @apply border-white/10 bg-panel-dark shadow-glass-dark;
   }
 
+  .glass-strong {
+    @apply rounded-2xl border-2 border-white/50 bg-white/85 shadow-glass backdrop-blur-2xl;
+  }
+
+  .dark .glass-strong {
+    @apply border-white/15 bg-white/[0.06] shadow-glass-dark;
+  }
+
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white shadow-md transition hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
+    @apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-br from-accent to-accent-dark px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-accent/30 transition-all hover:shadow-accent/50 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none;
+  }
+
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      120deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.35) 50%,
+      transparent 70%
+    );
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+  }
+
+  .btn-primary:hover::before {
+    transform: translateX(100%);
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white/40 px-4 py-2 text-sm font-medium text-ink transition hover:bg-white/70 dark:border-white/10 dark:bg-white/5 dark:text-ink-dark dark:hover:bg-white/10;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-ink/10 bg-white/40 px-4 py-2 text-sm font-medium text-ink backdrop-blur-md transition-all hover:border-ink/20 hover:bg-white/70 active:scale-[0.97] dark:border-white/10 dark:bg-white/5 dark:text-ink-dark dark:hover:border-white/20 dark:hover:bg-white/10;
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #a77a4a 0%, #5b3fe5 60%, #a77a4a 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 8s ease-in-out infinite;
+  }
+
+  .dark .text-gradient {
+    background: linear-gradient(135deg, #ffd9a8 0%, #c4b3ff 60%, #ffd9a8 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 24px rgba(196, 179, 255, 0.25);
+  }
+
+  .surface-noise {
+    position: relative;
+  }
+
+  .surface-noise::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: theme('backgroundImage.noise');
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    border-radius: inherit;
   }
 }

@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { EasterEggProvider } from './lib/easter-egg/useEasterEgg';
 import './index.css';
 import './i18n';
 
@@ -11,6 +12,8 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <EasterEggProvider>
+      <App />
+    </EasterEggProvider>
   </StrictMode>,
 );

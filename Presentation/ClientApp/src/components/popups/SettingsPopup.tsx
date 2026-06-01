@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Color } from '@/lib/signalr/contracts';
+import { useEasterEgg } from '@/lib/easter-egg/hook';
+import { blackLabel } from '@/lib/easter-egg/labels';
 import { cn } from '@/lib/utils/cn';
 import { Modal } from './Modal';
 
@@ -25,6 +27,7 @@ const COLOR_PREVIEWS: Record<ColorChoice, string | null> = {
 
 export function SettingsPopup({ isOpen, onClose, onStart }: SettingsPopupProps) {
   const { t } = useTranslation();
+  const { surprise } = useEasterEgg();
   const [color, setColor] = useState<ColorChoice>('white');
   const [seconds, setSeconds] = useState<number>(300);
 
@@ -87,7 +90,11 @@ export function SettingsPopup({ isOpen, onClose, onStart }: SettingsPopupProps) 
                       ?
                     </span>
                   )}
-                  <span>{t(`popup.settings.${c}`)}</span>
+                  <span>
+                    {c === 'black'
+                      ? blackLabel(t('popup.settings.black'), surprise)
+                      : t(`popup.settings.${c}`)}
+                  </span>
                 </motion.button>
               );
             })}

@@ -11,12 +11,12 @@ public static class InfrastructureServiceCollectionExtensions
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
         services.AddSingleton<IGameRepository, InMemoryGameRepository>();
-        services.AddScoped<IGameTimerNotifer, SignalRGameTimerNotifer>();
+        services.AddSingleton<IGameTimerNotifer, SignalRGameTimerNotifer>();
+        services.AddSingleton<IGameNotifier, GameNotifier>();
         services.AddScoped<IMoveValidator, MoveValidator>();
         services.AddScoped<IPositionConverter, PositionConverter>();
         services.AddSingleton<IGameIdGenerator, GameIdGenerator>();
         services.AddScoped<IPositionParser, PositionParser>();
-        services.AddScoped<IGameNotifier, GameNotifier>();
         return services;
     }
 }
