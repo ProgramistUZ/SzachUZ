@@ -1,7 +1,7 @@
-﻿services:
+services:
   szachuz:
     image: szachuz
     build:
       context: .
-      dockerfile: SzachUZ/Dockerfile
+      dockerfile: Presentation/Dockerfile
 
