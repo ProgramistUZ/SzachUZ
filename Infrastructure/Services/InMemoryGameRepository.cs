@@ -65,18 +65,28 @@ public class InMemoryGameRepository : IGameRepository
 
     public Task<Color?> SavePlayerAsync(Guid gameId, string connectionId)
     {
-        var players = _gamesPlayers.GetOrAdd(gameId, _ => new Dictionary<string, Color>());
+        if (!_games.ContainsKey(gameId))
+            return Task.FromResult<Color?>(null);
+
+        if (!_gamesPlayers.TryGetValue(gameId, out var players))
+            return Task.FromResult<Color?>(null);
 
         lock (players)
         {
-            if (players.ContainsKey(connectionId))
-                return Task.FromResult<Color?>(players[connectionId]);
+            if (players.TryGetValue(connectionId, out var existing))
+                return Task.FromResult<Color?>(existing);
 
-            var newColor = players.Values.Contains(Color.White) ? Color.Black : Color.White;
-            players[connectionId] = newColor;
-            Console.WriteLine(newColor.ToString());
+            // Twórca już zajął jeden kolor — dołączający dostaje przeciwny.
+            var taken = players.Values.ToHashSet();
+            Color? assigned = null;
+            if (!taken.Contains(Color.White)) assigned = Color.White;
+            else if (!taken.Contains(Color.Black)) assigned = Color.Black;
 
-            return Task.FromResult<Color?>(newColor);
+            if (assigned == null)
+                return Task.FromResult<Color?>(null);
+
+            players[connectionId] = assigned.Value;
+            return Task.FromResult<Color?>(assigned);
         }
     }
 

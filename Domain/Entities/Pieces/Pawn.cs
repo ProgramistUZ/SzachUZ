@@ -20,7 +20,7 @@ public class Pawn : PieceBase
 
     public Pawn(Position position, Color color, int moveCount) : base(color, PieceType.Pawn, position)
     {
-        _hasMoved = false;
+        _hasMoved = moveCount > 0;
         _promotionRow = Color == Color.White ? 8 : 1;
         MoveCount = moveCount;
     }
@@ -47,31 +47,21 @@ public class Pawn : PieceBase
             return;
         }
 
-        // En passant
-        if (targetPosition.Row == Position.Row + GetDirection())
+        // En passant — only legal from rank 5 (white) / rank 4 (black) and against a pawn that just moved two squares (MoveCount == 1)
+        bool onEnPassantRank = (Color == Color.White && Position.Row == 5) || (Color == Color.Black && Position.Row == 4);
+        if (onEnPassantRank
+            && targetPosition.Row == Position.Row + GetDirection()
+            && board.GetPositionPiece(targetPosition) == null
+            && Math.Abs(targetPosition.Col - Position.Col) == 1)
         {
-            if (targetPosition.Col == Position.Col - 1)
+            var capturedPawn = board.GetPositionPiece(new Position(Position.Row, targetPosition.Col)) as Pawn;
+            if (capturedPawn != null && capturedPawn.Color != Color && capturedPawn.MoveCount == 1)
             {
-                var pawn = board.GetPositionPiece(new Position(Position.Row, Position.Col - 1)) as Pawn;
-                if (pawn != null && pawn.Color != Color && pawn.MoveCount == 1)
-                {
-                    board.RemovePiece(pawn.Position);
-                    board.PlaceAndRemove(new Position(Position.Row + GetDirection(), Position.Col - 1), this);
-                    MoveCount++;
-                    return;
-                }
-            }
-
-            if (targetPosition.Col == Position.Col + 1)
-            {
-                var pawn = board.GetPositionPiece(new Position(Position.Row, Position.Col + 1)) as Pawn;
-                if (pawn != null && pawn.Color != Color)
-                {
-                    board.RemovePiece(pawn.Position);
-                    board.PlaceAndRemove(new Position(Position.Row + GetDirection(), Position.Col + 1), this);
-                    MoveCount++;
-                    return;
-                }
+                board.RemovePiece(capturedPawn.Position);
+                board.PlaceAndRemove(targetPosition, this);
+                MoveCount++;
+                _hasMoved = true;
+                return;
             }
         }
 
@@ -163,23 +153,7 @@ public class Pawn : PieceBase
         }
 
 
-        Console.WriteLine("-------------------------------");
-        foreach (var possibleMove in possibleMoves)
-        {
-            Console.WriteLine(possibleMove);
-        }
-
-        Console.WriteLine("-------------------------------");
-
-        // PROMOTION MOVE
-        if (oneStepMove.Row == _promotionRow
-            && IsValidPosition(oneStepMove)
-            && board.GetPositionPiece(oneStepMove) == null)
-            if (oneStepMove.Row == _promotionRow)
-            {
-                possibleMoves.Add(oneStepMove);
-            }
-
+        // Promotion move is already covered by the one-step move above; promotion is handled in MakeMove.
 
         // DIAGONAL MOVES
         Position positionLeftDiagonal = new Position( // add left diagonal
@@ -220,12 +194,7 @@ public class Pawn : PieceBase
 
     public override object Clone()
     {
-        if (Position.Row == _promotionRow)
-        {
-            return new Queen(Position, Color);
-        }
-
-        return new Pawn(Position, Color, MoveCount);
+        return new Pawn(new Position(Position.Row, Position.Col), Color, MoveCount);
     }
 
     /// <summary>

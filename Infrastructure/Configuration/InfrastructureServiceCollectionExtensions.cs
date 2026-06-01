@@ -14,7 +14,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IGameTimerNotifer, SignalRGameTimerNotifer>();
         services.AddScoped<IMoveValidator, MoveValidator>();
         services.AddScoped<IPositionConverter, PositionConverter>();
-        services.AddScoped<IGameIdGenerator, GameIdGenerator>();
+        services.AddSingleton<IGameIdGenerator, GameIdGenerator>();
         services.AddScoped<IPositionParser, PositionParser>();
         services.AddScoped<IGameNotifier, GameNotifier>();
         return services;

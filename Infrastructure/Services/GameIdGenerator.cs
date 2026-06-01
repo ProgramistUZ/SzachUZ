@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using Domain.Interfaces;
@@ -6,36 +7,31 @@ namespace Infrastructure.Services;
 
 public class GameIdGenerator : IGameIdGenerator
 {
-    private readonly HashSet<string> usedId = new HashSet<string>();
+    private const string Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private const int IdLength = 6;
+
+    private readonly ConcurrentDictionary<string, byte> _usedIds = new();
 
     public string GenerateJoinGameId()
     {
-        string gameId;
-
-        do
+        while (true)
         {
-            gameId = GenerateRandomId();
-        } while (usedId.Contains(gameId));
-
-        return gameId;
+            var candidate = GenerateRandomId();
+            if (_usedIds.TryAdd(candidate, 0))
+                return candidate;
+        }
     }
 
-    private string GenerateRandomId()
+    private static string GenerateRandomId()
     {
-        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        StringBuilder stringBuilder = new StringBuilder(6);
+        var stringBuilder = new StringBuilder(IdLength);
+        Span<byte> randomBytes = stackalloc byte[IdLength];
+        RandomNumberGenerator.Fill(randomBytes);
 
-        byte[] randomBytes = new byte[6];
-
-        using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+        for (int i = 0; i < IdLength; i++)
         {
-            rng.GetBytes(randomBytes);
-        }
-
-        for (int i = 0; i < 6; i++)
-        {
-            int randomIndex = randomBytes[i] % chars.Length;
-            stringBuilder.Append(chars[randomIndex]);
+            int randomIndex = randomBytes[i] % Chars.Length;
+            stringBuilder.Append(Chars[randomIndex]);
         }
 
         return stringBuilder.ToString();

@@ -1,6 +1,5 @@
 namespace Domain.Entities;
 
-using System.Net.Http.Headers;
 using Domain.Exceptions;
 using Domain.Extensions;
 using Domain.Interfaces;
@@ -12,7 +11,7 @@ public class ChessGame
     private readonly IMoveValidator _moveValidator;
     private readonly IGameIdGenerator _gameIdGenerator;
     private readonly IGameNotifier _gameNotifier;
-    private GameStatus status;
+    private GameStatus _status;
 
     PlayerTimer WhiteTimer { get; }
     PlayerTimer BlackTimer { get; }
@@ -29,7 +28,7 @@ public class ChessGame
     {
         _board = new ChessBoard(converter);
         _board.SetDefaultBoard(_board);
-        status = GameStatus.Waiting;
+        _status = GameStatus.Waiting;
         _moveValidator = moveValidator;
         _gameIdGenerator = gameIdGenerator;
         _gameNotifier = gameNotifier;
@@ -40,9 +39,9 @@ public class ChessGame
         BlackTimer = new PlayerTimer(gameLenght);
     }
 
-    public void move(Position from, Position to)
+    public async Task MoveAsync(Position from, Position to)
     {
-        if (status == GameStatus.Waiting || status == GameStatus.Finished)
+        if (_status == GameStatus.Waiting || _status == GameStatus.Finished)
             throw new InvalidMoveException("wait for game start");
         var piece = _board.GetPositionPiece(from)
                     ?? throw new InvalidMoveException("Brak figury na polu źródłowym.");
@@ -58,61 +57,37 @@ public class ChessGame
         if (_moveValidator.IsInCheck(boardClone, piece.Color))
             throw new InvalidMoveException("Ruch pozostawia Twojego króla w szachu.");
 
-
         piece.MakeMove(_board, to);
-        swapTimersAndTurn();
-        SendTurn().ContinueWith(t =>
-        {
-            if (t.IsFaulted)
-            {
-                Console.WriteLine(t.Exception);
-            }
-        });
+        SwapTimersAndTurn();
+
+        await SendTurnAsync();
+
         var opponent = piece.Color == Color.White ? Color.Black : Color.White;
         if (_moveValidator.IsInMate(_board, opponent))
         {
-            Console.WriteLine("MAT! Koniec gry.");
-            SendEvent().ContinueWith(t =>
-            {
-                if (t.IsFaulted)
-                {
-                    Console.WriteLine(t.Exception);
-                }
-            });
+            await SendEventAsync();
             EndGame();
         }
         else if (_moveValidator.IsInCheck(_board, opponent))
         {
-            Console.WriteLine("SZACH!");
-            SendEvent().ContinueWith(t =>
-            {
-                if (t.IsFaulted)
-                {
-                    Console.WriteLine(t.Exception);
-                }
-            });
+            await SendEventAsync();
         }
     }
 
-
-    public List<Position> GetAllPossibleMoves(Position from, Task<Color> color)
+    public List<Position> GetAllPossibleMoves(Position from, Color requesterColor)
     {
         var piece = _board.GetPositionPiece(from);
 
         if (piece == null)
-        {
             throw new InvalidMoveException();
-        }
 
-        if (piece.Color != color.Result)
+        if (piece.Color != requesterColor)
             throw new InvalidMoveException("To nie Twoja figura.");
 
-        var positions = piece.GetAllPossibleMoves(_board);
-
-        return positions;
+        return piece.GetAllPossibleMoves(_board);
     }
 
-    private void swapTimersAndTurn()
+    private void SwapTimersAndTurn()
     {
         if (CurrentPlayer == Color.White)
         {
@@ -128,17 +103,18 @@ public class ChessGame
         CurrentPlayer = CurrentPlayer.Next();
     }
 
-
     public void StartGame()
     {
-        status = GameStatus.Active;
+        _status = GameStatus.Active;
     }
 
     public void EndGame()
     {
+        if (_status == GameStatus.Finished)
+            return;
         BlackTimer.EndTurn();
         WhiteTimer.EndTurn();
-        status = GameStatus.Finished;
+        _status = GameStatus.Finished;
     }
 
     public async Task StartTimers(IGameTimerNotifer timerNotifier)
@@ -172,42 +148,30 @@ public class ChessGame
         await timerNotifier.NotifyGameStartedAsync(GameId, Color.White);
     }
 
-    private async Task SendEvent()
+    private async Task SendEventAsync()
     {
         if (_moveValidator.IsInCheck(_board, Color.White))
         {
             if (_moveValidator.IsInMate(_board, Color.White))
-            {
                 await _gameNotifier.NotifyGameEvent(GameId, Color.Black, "Szach Mat! Czarny wygrywa!");
-            }
             else
-            {
                 await _gameNotifier.NotifyGameEvent(GameId, Color.White, "Szach!");
-            }
         }
         if (_moveValidator.IsInCheck(_board, Color.Black))
         {
             if (_moveValidator.IsInMate(_board, Color.Black))
-            {
                 await _gameNotifier.NotifyGameEvent(GameId, Color.White, "Szach Mat! Biały wygrywa!");
-            }
             else
-            {
                 await _gameNotifier.NotifyGameEvent(GameId, Color.Black, "Szach!");
-            }
         }
     }
 
-    private async Task SendTurn()
+    private async Task SendTurnAsync()
     {
         if (CurrentPlayer == Color.White)
-        {
             await _gameNotifier.NotifyGameEvent(GameId, Color.White, "Ruch Białych.");
-        }
         else
-        {
             await _gameNotifier.NotifyGameEvent(GameId, Color.Black, "Ruch Czarnych.");
-        }
     }
 
     public string[][] GetBoard()
@@ -227,7 +191,6 @@ public class ChessGame
                 jagged[i][j] = array[i, j];
             }
         }
-
 
         return jagged;
     }

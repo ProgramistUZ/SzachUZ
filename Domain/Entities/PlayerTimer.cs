@@ -3,9 +3,10 @@ namespace Domain.Entities;
 public class PlayerTimer
 {
     private readonly TimeSpan _tickInterval = TimeSpan.FromSeconds(1);
+    private readonly object _gate = new();
 
     private TimeSpan _remainingTime;
-    private CancellationTokenSource _cts;
+    private CancellationTokenSource? _cts;
     private DateTime _turnStartTime;
 
     public Func<TimeSpan, Task>? OnTick { get; set; }
@@ -17,45 +18,64 @@ public class PlayerTimer
 
     public void StartTurn()
     {
-        _turnStartTime = DateTime.UtcNow; // ✅ FIX: ustawienie startu tury
-        _cts = new CancellationTokenSource();
+        lock (_gate)
+        {
+            _cts?.Dispose();
+            _turnStartTime = DateTime.UtcNow;
+            _cts = new CancellationTokenSource();
+        }
+
         _ = RunTimerAsync(_cts.Token);
     }
 
     public void EndTurn()
     {
-        if (_cts != null && !_cts.IsCancellationRequested)
+        CancellationTokenSource? toDispose = null;
+        lock (_gate)
         {
+            if (_cts == null || _cts.IsCancellationRequested)
+                return;
+
             _cts.Cancel();
             var elapsed = DateTime.UtcNow - _turnStartTime;
             _remainingTime -= elapsed;
 
             if (_remainingTime < TimeSpan.Zero)
                 _remainingTime = TimeSpan.Zero;
+
+            toDispose = _cts;
+            _cts = null;
         }
+
+        toDispose?.Dispose();
     }
 
     private async Task RunTimerAsync(CancellationToken token)
     {
-        while (!token.IsCancellationRequested)
+        try
         {
-            var elapsed = DateTime.UtcNow - _turnStartTime;
-            var timeLeft = _remainingTime - elapsed;
+            while (!token.IsCancellationRequested)
+            {
+                var elapsed = DateTime.UtcNow - _turnStartTime;
+                var timeLeft = _remainingTime - elapsed;
 
-            if (timeLeft < TimeSpan.Zero)
-                timeLeft = TimeSpan.Zero;
+                if (timeLeft < TimeSpan.Zero)
+                    timeLeft = TimeSpan.Zero;
 
-            if (OnTick != null)
-                await OnTick.Invoke(timeLeft);
+                if (OnTick != null)
+                    await OnTick.Invoke(timeLeft);
 
-            if (timeLeft <= TimeSpan.Zero)
-                break;
+                if (timeLeft <= TimeSpan.Zero)
+                {
+                    EndTurn();
+                    return;
+                }
 
-            await Task.Delay(_tickInterval, token);
+                await Task.Delay(_tickInterval, token);
+            }
         }
-
-        if (!token.IsCancellationRequested)
-            EndTurn();
+        catch (TaskCanceledException) { }
+        catch (OperationCanceledException) { }
     }
 
     public TimeSpan GetRemainingTime() => _remainingTime;

@@ -178,7 +178,7 @@ public class King : PieceBase
 
     public override object Clone()
     {
-        return new King(Position, Color);
+        return new King(new Position(Position.Row, Position.Col), Color) { HasMoved = HasMoved };
     }
 
     public override bool IsMoveValid(ChessBoard board, Position targetPosition)

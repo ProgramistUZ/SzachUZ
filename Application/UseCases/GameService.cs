@@ -104,11 +104,11 @@ public class GameService : IGameService
             return false;
         }
 
-        var fromPosition = new Position(from.Row, from.Col); //_parser.Parse(from);
-        var toPosition = new Position(to.Row, to.Col); //_parser.Parse(to);
+        var fromPosition = new Position(from.Row, from.Col);
+        var toPosition = new Position(to.Row, to.Col);
         try
         {
-            game.move(fromPosition, toPosition);
+            await game.MoveAsync(fromPosition, toPosition);
         }
         catch (InvalidMoveException e)
         {
@@ -131,7 +131,7 @@ public class GameService : IGameService
 
         try
         {
-            var color = CheckPlayerColor(gameId, connectionId);
+            var color = await CheckPlayerColor(gameId, connectionId);
             var positions = game.GetAllPossibleMoves(from, color);
             _logger.LogDebug("[{Method}] Positions returned from game {GameId}", nameof(GetAllPossibleMoves), gameId);
             return positions;
@@ -139,6 +139,11 @@ public class GameService : IGameService
         catch (InvalidMoveException e)
         {
             _logger.LogInformation("Invalid move exception: {Message}", e.Message);
+            return new List<Position>();
+        }
+        catch (KeyNotFoundException e)
+        {
+            _logger.LogInformation("Player not in game: {Message}", e.Message);
             return new List<Position>();
         }
     }
