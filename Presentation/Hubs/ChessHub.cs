@@ -44,6 +44,13 @@ public class ChessHub : ChessHubBase
 
             var players = await _gameService.GetPlayers(game.GameId);
 
+            if (players == null)
+            {
+                _logger.LogWarning("[{Method}]: Game {gameId} has no players record", nameof(JoinGame), game.GameId);
+                await Clients.Caller.SendAsync("Error", "Game state is invalid");
+                return;
+            }
+
             if (players.Count() >= LOBBY_SIZE && !players.ContainsKey(Context.ConnectionId.ToString()))
             {
                 _logger.LogDebug("[{Method}]: Game {gameId} is full, caller {id}", nameof(JoinGame), game.GameId,
@@ -87,7 +94,6 @@ public class ChessHub : ChessHubBase
         var isTurn = await _gameService.CheckPlayerTurn(gameId, Context.ConnectionId);
         if (!isTurn)
         {
-            await Clients.Group(gameId.ToString()).SendAsync("MoveMade", game.GetBoard());
             await Clients.Caller.SendAsync("Error", "its not your turn");
             return;
         }
@@ -103,7 +109,6 @@ public class ChessHub : ChessHubBase
         }
         else
         {
-            await Clients.Group(gameId.ToString()).SendAsync("MoveMade", game.GetBoard());
             await Clients.Caller.SendAsync("Error", "WRONG MOVE");
         }
     }
@@ -154,8 +159,10 @@ public class ChessHub : ChessHubBase
 
     public async Task SendMessage(Guid gameId, string message)
     {
+        var connId = Context.ConnectionId ?? string.Empty;
+        var suffix = connId.Length >= 5 ? connId.Substring(0, 5) : connId;
         await Clients.Group(gameId.ToString()).SendAsync("ReciveMessage",
-            $"Guest{Context.ConnectionId.ToString().Substring(0, 5)}: {message}");
+            $"Guest{suffix}: {message}");
     }
 
 

@@ -14,7 +14,7 @@ public class Rook : PieceBase
 
     public override object Clone()
     {
-        return new Rook(Position, Color);
+        return new Rook(new Position(Position.Row, Position.Col), Color) { HasMoved = HasMoved };
     }
 
     public override void MakeMove(ChessBoard board, Position targetPosition)

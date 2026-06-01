@@ -9,28 +9,14 @@ public class MoveValidator : IMoveValidator
     public bool IsInCheck(ChessBoard board, Color color)
     {
         Position kingPos = color == Color.White ? board.WhiteKing : board.BlackKing;
-        Console.WriteLine($"KING POS: {kingPos} CHECKING FOR CHECK COLOR : {color}");
-
 
         foreach (var piece in board.GetAllPieces())
         {
-            if (piece == null)
-            {
+            if (piece == null || piece.Color == color)
                 continue;
-            }
 
-            if (piece.Color != color && piece.GetAllPossibleMoves(board).Contains(kingPos))
-            {
-                Console.WriteLine($"{piece.Name} AT {piece.Position} ATAKUJE KROLA? with POSSIBLE MOVES" );
-                foreach(var move in piece.GetAllPossibleMoves(board))
-                {
-                    Console.WriteLine(move);
-                }
-
-                Console.WriteLine($"CZY TO PRAWDA {piece.GetAllPossibleMoves(board).Contains(kingPos)}");
-                Console.Write(kingPos.ToString());
+            if (piece.GetAllPossibleMoves(board).Contains(kingPos))
                 return true;
-            }
         }
 
         return false;
@@ -38,80 +24,41 @@ public class MoveValidator : IMoveValidator
 
     public bool IsInMate(ChessBoard board, Color color)
     {
-        Position kingPos = color == Color.White ? board.WhiteKing : board.BlackKing;
-        var king = board.GetPositionPiece(kingPos);
+        if (!IsInCheck(board, color))
+            return false;
 
+        return !HasAnyLegalMove(board, color);
+    }
 
-        List<Position> possibleMoves = king.GetAllPossibleMoves(board);
-
-        if (IsInCheck(board, color))
+    private bool HasAnyLegalMove(ChessBoard board, Color color)
+    {
+        foreach (var piece in board.GetAllPieces().ToList())
         {
-            ChessBoard copyBoard = board.Clone();
+            if (piece == null || piece.Color != color)
+                continue;
 
-
-            // check if king can move out of check if yes false
-            if (possibleMoves.Count == 0)
+            var from = piece.Position;
+            foreach (var to in piece.GetAllPossibleMoves(board))
             {
-                foreach (var move in possibleMoves)
+                var clone = board.Clone();
+                var clonedPiece = clone.GetPositionPiece(from);
+                if (clonedPiece == null)
+                    continue;
+
+                try
                 {
-                    copyBoard = board.Clone();
-
-                    PieceBase? piece = copyBoard.GetPositionPiece(kingPos);
-
-                    if (piece == null)
-                    {
-                        continue;
-                    }
-
-                    piece.MakeMove(copyBoard, move);
-
-                    if (!IsInCheck(copyBoard, color))
-                    {
-                        return false;
-                    }
+                    clonedPiece.MakeMove(clone, to);
                 }
-            }
-
-            // check if any piece can block if yes false
-            foreach (var move in possibleMoves)
-            {
-                copyBoard = board.Clone();
-                foreach (var piece in copyBoard.GetAllPieces())
+                catch
                 {
-                    if (piece != null && piece.Color == color && piece.GetAllPossibleMoves(copyBoard).Contains(move))
-                    {
-                        var originalPosition = piece.Position;
-                        piece.MakeMove(copyBoard, move);
-
-                        if (!IsInCheck(copyBoard, color))
-                        {
-                            return false;
-                        }
-                    }
+                    continue;
                 }
+
+                if (!IsInCheck(clone, color))
+                    return true;
             }
-
-            copyBoard = board.Clone();
-
-            //check if we can capture attacking piece
-            foreach (var piece in copyBoard.GetAllPieces())
-            {
-                if(piece != null && piece.Color != color && piece.GetAllPossibleMoves(copyBoard).Contains(kingPos))
-                {
-                    var originalPosition = piece.Position;
-
-                    foreach(var p in copyBoard.GetAllPieces())
-                    {
-                        if(p != null && p.Color == color && p.GetAllPossibleMoves(copyBoard).Contains(originalPosition))
-                        {
-                            p.MakeMove(copyBoard, originalPosition);
-                            if (!IsInCheck(copyBoard, color)) { return false; }
-                        }
-                    }
-                }
-            }
-            return true;
         }
+
         return false;
     }
 }
