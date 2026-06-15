@@ -489,7 +489,27 @@ export function useChessHub(): UseChessHub {
   const resetError = useCallback(() => dispatch({ type: 'clearError' }), []);
 
   return useMemo(
-    () => ({ state, createGame, joinGame, setReady, unsetReady, makeMove, getMoves, sendMessage, resetError }),
-    [state, createGame, joinGame, setReady, unsetReady, makeMove, getMoves, sendMessage, resetError],
+    () => ({
+      state,
+      createGame,
+      joinGame,
+      setReady,
+      unsetReady,
+      makeMove,
+      getMoves,
+      sendMessage,
+      resetError,
+    }),
+    [
+      state,
+      createGame,
+      joinGame,
+      setReady,
+      unsetReady,
+      makeMove,
+      getMoves,
+      sendMessage,
+      resetError,
+    ],
   );
 }

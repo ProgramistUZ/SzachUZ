@@ -15,7 +15,13 @@ interface TimerProps {
   inactive?: boolean;
 }
 
-export function Timer({ color, seconds, isActive, totalSeconds = 300, inactive = false }: TimerProps) {
+export function Timer({
+  color,
+  seconds,
+  isActive,
+  totalSeconds = 300,
+  inactive = false,
+}: TimerProps) {
   const { t } = useTranslation();
   const { surprise } = useEasterEgg();
   const isLow = seconds <= LOW_TIME_THRESHOLD_SECONDS;

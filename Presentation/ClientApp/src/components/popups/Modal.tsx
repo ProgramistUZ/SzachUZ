@@ -88,7 +88,10 @@ export function Modal({ isOpen, onClose, title, titleClassName, children }: Moda
             transition={{ type: 'spring', stiffness: 280, damping: 26 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 id={titleId} className={titleClassName ?? 'mb-4 font-display text-2xl font-semibold'}>
+            <h2
+              id={titleId}
+              className={titleClassName ?? 'mb-4 font-display text-2xl font-semibold'}
+            >
               {title}
             </h2>
             {children}

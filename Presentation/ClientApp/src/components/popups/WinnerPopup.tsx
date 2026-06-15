@@ -18,7 +18,14 @@ interface WinnerPopupProps {
 const BURST_INTERVAL_MS = 1100;
 const BURSTS = 4;
 
-export function WinnerPopup({ isOpen, onClose, onRematch, winner, playerColor, reason }: WinnerPopupProps) {
+export function WinnerPopup({
+  isOpen,
+  onClose,
+  onRematch,
+  winner,
+  playerColor,
+  reason,
+}: WinnerPopupProps) {
   const { t } = useTranslation();
   const { surprise } = useEasterEgg();
 
@@ -27,7 +34,9 @@ export function WinnerPopup({ isOpen, onClose, onRematch, winner, playerColor, r
     winner === 'draw'
       ? t('popup.winner.draw')
       : iWon
-        ? (winner === 'black' && surprise ? '??? wygrywa!' : t('popup.winner.youWin'))
+        ? winner === 'black' && surprise
+          ? '??? wygrywa!'
+          : t('popup.winner.youWin')
         : t('popup.winner.youLose');
 
   useEffect(() => {
@@ -41,14 +50,25 @@ export function WinnerPopup({ isOpen, onClose, onRematch, winner, playerColor, r
     const id = window.setInterval(() => {
       if (cancelled) return;
       count += 1;
-      if (count > BURSTS) { window.clearInterval(id); return; }
+      if (count > BURSTS) {
+        window.clearInterval(id);
+        return;
+      }
       fire();
     }, BURST_INTERVAL_MS);
-    return () => { cancelled = true; window.clearInterval(id); };
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
   }, [isOpen, iWon]);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={titleText} titleClassName="mb-4 pt-4 font-display text-5xl font-semibold text-center tracking-tight">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={titleText}
+      titleClassName="mb-4 pt-4 font-display text-5xl font-semibold text-center tracking-tight"
+    >
       <motion.div
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}

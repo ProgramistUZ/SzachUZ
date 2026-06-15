@@ -19,8 +19,17 @@ import { useTheme } from './lib/theme/useTheme';
 function App() {
   useTheme();
   const { t } = useTranslation();
-  const { state, createGame, joinGame, setReady, unsetReady, makeMove, getMoves, sendMessage, resetError } =
-    useChessHub();
+  const {
+    state,
+    createGame,
+    joinGame,
+    setReady,
+    unsetReady,
+    makeMove,
+    getMoves,
+    sendMessage,
+    resetError,
+  } = useChessHub();
 
   const [showSettings, setShowSettings] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
@@ -137,9 +146,7 @@ function App() {
         }
       />
       <CountdownOverlay countdown={state.countdown} />
-      {state.opponentDisconnected && state.status === 'playing' && (
-        <OpponentDisconnectedBanner />
-      )}
+      {state.opponentDisconnected && state.status === 'playing' && <OpponentDisconnectedBanner />}
       {state.errorMessage && (
         <ErrorToast
           message={state.errorMessage}
@@ -175,19 +182,29 @@ function LobbyReadyOverlay({
         <p className="text-sm text-muted dark:text-muted-dark">{t('popup.ready.hint')}</p>
         <div className="flex w-full flex-col gap-3">
           <div className="flex items-center justify-between rounded-lg border border-ink/10 px-4 py-2.5 dark:border-white/10">
-            <span className="text-sm font-medium text-ink dark:text-ink-dark">{t('popup.ready.you')}</span>
+            <span className="text-sm font-medium text-ink dark:text-ink-dark">
+              {t('popup.ready.you')}
+            </span>
             {iAmReady ? (
-              <span className="text-xs font-semibold text-success">{t('popup.ready.youAreReady')}</span>
+              <span className="text-xs font-semibold text-success">
+                {t('popup.ready.youAreReady')}
+              </span>
             ) : (
               <span className="h-2 w-2 rounded-full bg-muted" />
             )}
           </div>
           <div className="flex items-center justify-between rounded-lg border border-ink/10 px-4 py-2.5 dark:border-white/10">
-            <span className="text-sm text-muted dark:text-muted-dark">{t('popup.ready.opponent')}</span>
+            <span className="text-sm text-muted dark:text-muted-dark">
+              {t('popup.ready.opponent')}
+            </span>
             {opponentReady ? (
-              <span className="text-xs font-semibold text-success">{t('popup.ready.opponentIsReady')}</span>
+              <span className="text-xs font-semibold text-success">
+                {t('popup.ready.opponentIsReady')}
+              </span>
             ) : (
-              <span className="text-xs text-muted dark:text-muted-dark">{t('popup.ready.waitingForOpponent')}</span>
+              <span className="text-xs text-muted dark:text-muted-dark">
+                {t('popup.ready.waitingForOpponent')}
+              </span>
             )}
           </div>
         </div>
@@ -203,7 +220,7 @@ function LobbyReadyOverlay({
           </motion.button>
         ) : (
           <div className="flex w-full flex-col items-center gap-3">
-            <p className="text-sm text-muted dark:text-muted-dark animate-pulse">
+            <p className="animate-pulse text-sm text-muted dark:text-muted-dark">
               {t('popup.ready.waitingForOpponent')}
             </p>
             <button type="button" className="btn-ghost text-sm" onClick={onUnready}>
@@ -239,7 +256,7 @@ function CountdownOverlay({ countdown }: { countdown: number | null }) {
 function OpponentDisconnectedBanner() {
   const { t } = useTranslation();
   return (
-    <div className="fixed top-20 left-1/2 z-40 -translate-x-1/2 rounded-xl border border-danger/40 bg-danger/10 px-5 py-3 text-sm font-medium text-danger backdrop-blur-md">
+    <div className="fixed left-1/2 top-20 z-40 -translate-x-1/2 rounded-xl border border-danger/40 bg-danger/10 px-5 py-3 text-sm font-medium text-danger backdrop-blur-md">
       {t('popup.disconnected.opponentLeft')}
     </div>
   );
