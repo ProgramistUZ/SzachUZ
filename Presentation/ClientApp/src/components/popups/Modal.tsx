@@ -5,6 +5,7 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
+  titleClassName?: string;
   children: ReactNode;
 }
 
@@ -17,7 +18,7 @@ const FOCUSABLE = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
-export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export function Modal({ isOpen, onClose, title, titleClassName, children }: ModalProps) {
   const titleId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
@@ -87,7 +88,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
             transition={{ type: 'spring', stiffness: 280, damping: 26 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 id={titleId} className="mb-4 font-display text-2xl font-semibold">
+            <h2 id={titleId} className={titleClassName ?? 'mb-4 font-display text-2xl font-semibold'}>
               {title}
             </h2>
             {children}

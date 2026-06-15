@@ -11,59 +11,55 @@ interface WinnerPopupProps {
   onClose: () => void;
   onRematch?: () => void;
   winner: Color | 'draw' | null;
+  playerColor?: Color;
+  reason?: string | null;
 }
 
 const BURST_INTERVAL_MS = 1100;
 const BURSTS = 4;
 
-export function WinnerPopup({ isOpen, onClose, onRematch, winner }: WinnerPopupProps) {
+export function WinnerPopup({ isOpen, onClose, onRematch, winner, playerColor, reason }: WinnerPopupProps) {
   const { t } = useTranslation();
   const { surprise } = useEasterEgg();
 
+  const iWon = winner !== 'draw' && winner !== null && winner === playerColor;
+  const titleText =
+    winner === 'draw'
+      ? t('popup.winner.draw')
+      : iWon
+        ? (winner === 'black' && surprise ? '??? wygrywa!' : t('popup.winner.youWin'))
+        : t('popup.winner.youLose');
+
   useEffect(() => {
-    if (!isOpen || winner === null || winner === 'draw') return;
+    if (!isOpen || !iWon) return;
     let cancelled = false;
     const fire = () => {
-      void confetti({
-        particleCount: 140,
-        spread: 90,
-        startVelocity: 42,
-        origin: { y: 0.6 },
-      });
+      void confetti({ particleCount: 140, spread: 90, startVelocity: 42, origin: { y: 0.6 } });
     };
     fire();
     let count = 0;
     const id = window.setInterval(() => {
       if (cancelled) return;
       count += 1;
-      if (count > BURSTS) {
-        window.clearInterval(id);
-        return;
-      }
+      if (count > BURSTS) { window.clearInterval(id); return; }
       fire();
     }, BURST_INTERVAL_MS);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, [isOpen, winner]);
-
-  const titleKey: 'white' | 'black' | 'draw' =
-    winner === 'white' ? 'white' : winner === 'black' ? 'black' : 'draw';
-  const titleText =
-    titleKey === 'black' && surprise
-      ? t('popup.winner.blackSurprise')
-      : t(`popup.winner.${titleKey}`);
+    return () => { cancelled = true; window.clearInterval(id); };
+  }, [isOpen, iWon]);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={titleText}>
+    <Modal isOpen={isOpen} onClose={onClose} title={titleText} titleClassName="mb-4 pt-4 font-display text-5xl font-semibold text-center tracking-tight">
       <motion.div
         initial={{ scale: 0.85, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 260, damping: 22 }}
         className="flex flex-col items-center gap-6 py-2 text-center"
       >
-        <p className="font-display text-5xl font-semibold tracking-tight">{titleText}</p>
+        {reason && (
+          <p className="text-sm text-muted dark:text-muted-dark">
+            {t(`popup.winner.reason.${reason}`, reason)}
+          </p>
+        )}
         <div className="flex justify-center gap-2">
           {onRematch && (
             <motion.button

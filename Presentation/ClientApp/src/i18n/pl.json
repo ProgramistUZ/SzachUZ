@@ -5,7 +5,7 @@
   "topbar": {
     "join": "Dołącz",
     "code": "Kod",
-    "settings": "Ustawienia",
+    "settings": "Nowa gra",
     "language": "Język",
     "theme": {
       "light": "Tryb jasny",
@@ -58,13 +58,32 @@
       "copied": "Skopiowano!",
       "close": "Zamknij"
     },
+    "ready": {
+      "title": "Obaj gracze połączeni!",
+      "hint": "Kliknij Gotowy gdy jesteś gotowy do gry.",
+      "ready": "Gotowy!",
+      "waitingForOpponent": "Czekam…",
+      "youAreReady": "Gotowy",
+      "opponentIsReady": "Gotowy",
+      "you": "Ty",
+      "opponent": "Przeciwnik",
+      "unready": "Cofnij"
+    },
     "winner": {
-      "white": "Wygrały białe!",
-      "black": "Wygrały czarne!",
-      "blackSurprise": "??? wygrywa!",
+      "youWin": "Wygrywasz!",
+      "youLose": "Przegrywasz!",
       "draw": "Remis",
       "rematch": "Rewanż",
-      "close": "Zamknij"
+      "close": "Zamknij",
+      "reason": {
+        "timeout": "Koniec czasu!"
+      }
+    },
+    "countdown": {
+      "starting": "Start za"
+    },
+    "disconnected": {
+      "opponentLeft": "Przeciwnik się rozłączył — czekam na powrót…"
     }
   },
   "chat": {

@@ -11,6 +11,7 @@ public class ChessGame
     private readonly IMoveValidator _moveValidator;
     private readonly IGameIdGenerator _gameIdGenerator;
     private readonly IGameNotifier _gameNotifier;
+    private readonly TimeSpan _gameLength;
     private GameStatus _status;
 
     PlayerTimer WhiteTimer { get; }
@@ -19,6 +20,11 @@ public class ChessGame
     public Color CurrentPlayer { get; private set; } = Color.White;
     public string JoinGameId { get; } // 6 characters
     public Guid GameId { get; } = Guid.NewGuid();
+    public bool IsActive => _status == GameStatus.Active;
+    public bool IsFinished => _status == GameStatus.Finished;
+    public TimeSpan WhiteTimeLeft => WhiteTimer.GetRemainingTime();
+    public TimeSpan BlackTimeLeft => BlackTimer.GetRemainingTime();
+    public TimeSpan GameLength => _gameLength;
 
     public ChessGame(IMoveValidator moveValidator,
         IGameIdGenerator gameIdGenerator,
@@ -34,6 +40,7 @@ public class ChessGame
         _gameNotifier = gameNotifier;
 
         JoinGameId = _gameIdGenerator.GenerateJoinGameId();
+        _gameLength = gameLenght;
 
         WhiteTimer = new PlayerTimer(gameLenght);
         BlackTimer = new PlayerTimer(gameLenght);
@@ -125,8 +132,7 @@ public class ChessGame
 
             if (timeLeft <= TimeSpan.Zero)
             {
-                await timerNotifier.NotifyTimeoutAsync(GameId, Color.White);
-                await _gameNotifier.NotifyGameEvent(GameId, Color.White, "Koniec czasu! Czarny wygrywa!");
+                await timerNotifier.NotifyGameOverAsync(GameId, Color.Black, "timeout");
                 EndGame();
             }
         };
@@ -137,15 +143,19 @@ public class ChessGame
 
             if (timeLeft <= TimeSpan.Zero)
             {
-                await timerNotifier.NotifyTimeoutAsync(GameId, Color.Black);
-                await _gameNotifier.NotifyGameEvent(GameId, Color.Black, "Koniec czasu! Bialy wygrywa!");
+                await timerNotifier.NotifyGameOverAsync(GameId, Color.White, "timeout");
                 EndGame();
             }
         };
 
-        WhiteTimer.StartTurn();
+        for (var i = 3; i >= 1; i--)
+        {
+            await timerNotifier.NotifyCountdownAsync(GameId, i);
+            await Task.Delay(TimeSpan.FromSeconds(1));
+        }
 
-        await timerNotifier.NotifyGameStartedAsync(GameId, Color.White);
+        WhiteTimer.StartTurn();
+        await timerNotifier.NotifyGameStartedAsync(GameId, Color.White, _gameLength);
     }
 
     private async Task SendEventAsync()

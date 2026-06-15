@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppShell } from './components/layout/AppShell';
@@ -18,7 +19,7 @@ import { useTheme } from './lib/theme/useTheme';
 function App() {
   useTheme();
   const { t } = useTranslation();
-  const { state, createGame, joinGame, makeMove, getMoves, sendMessage, resetError } =
+  const { state, createGame, joinGame, setReady, unsetReady, makeMove, getMoves, sendMessage, resetError } =
     useChessHub();
 
   const [showSettings, setShowSettings] = useState(false);
@@ -38,6 +39,7 @@ function App() {
   }, [state.winner]);
 
   const isPlayersTurn = state.whoseTurn === state.playerColor && state.status === 'playing';
+  const timerInactive = state.status !== 'playing' && state.status !== 'ended';
 
   const moves = useMemo<MoveRow[]>(() => [], []);
 
@@ -64,6 +66,8 @@ function App() {
               color={state.playerColor === 'white' ? 'black' : 'white'}
               seconds={state.playerColor === 'white' ? state.blackTime : state.whiteTime}
               isActive={state.whoseTurn !== state.playerColor && state.status === 'playing'}
+              totalSeconds={state.gameLength}
+              inactive={timerInactive}
             />
             <Chessboard
               board={state.board}
@@ -79,6 +83,8 @@ function App() {
               color={state.playerColor}
               seconds={state.playerColor === 'white' ? state.whiteTime : state.blackTime}
               isActive={state.whoseTurn === state.playerColor && state.status === 'playing'}
+              totalSeconds={state.gameLength}
+              inactive={timerInactive}
             />
             <TurnIndicator status={state.status} isPlayersTurn={isPlayersTurn} />
           </>
@@ -117,10 +123,23 @@ function App() {
               isOpen={showWinner}
               onClose={() => setShowWinner(false)}
               winner={state.winner}
+              playerColor={state.playerColor}
+              reason={state.winReason}
+            />
+            <LobbyReadyOverlay
+              isOpen={state.status === 'lobby' && state.lobbyFull}
+              iAmReady={state.iAmReady}
+              opponentReady={state.opponentReady}
+              onReady={() => void setReady()}
+              onUnready={() => void unsetReady()}
             />
           </>
         }
       />
+      <CountdownOverlay countdown={state.countdown} />
+      {state.opponentDisconnected && state.status === 'playing' && (
+        <OpponentDisconnectedBanner />
+      )}
       {state.errorMessage && (
         <ErrorToast
           message={state.errorMessage}
@@ -129,6 +148,100 @@ function App() {
         />
       )}
     </>
+  );
+}
+
+function LobbyReadyOverlay({
+  isOpen,
+  iAmReady,
+  opponentReady,
+  onReady,
+  onUnready,
+}: {
+  isOpen: boolean;
+  iAmReady: boolean;
+  opponentReady: boolean;
+  onReady: () => void;
+  onUnready: () => void;
+}) {
+  const { t } = useTranslation();
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="glass surface-noise flex w-full max-w-sm flex-col items-center gap-6 rounded-2xl p-8 text-center shadow-2xl">
+        <p className="font-display text-2xl font-semibold tracking-tight text-ink dark:text-ink-dark">
+          {t('popup.ready.title')}
+        </p>
+        <p className="text-sm text-muted dark:text-muted-dark">{t('popup.ready.hint')}</p>
+        <div className="flex w-full flex-col gap-3">
+          <div className="flex items-center justify-between rounded-lg border border-ink/10 px-4 py-2.5 dark:border-white/10">
+            <span className="text-sm font-medium text-ink dark:text-ink-dark">{t('popup.ready.you')}</span>
+            {iAmReady ? (
+              <span className="text-xs font-semibold text-success">{t('popup.ready.youAreReady')}</span>
+            ) : (
+              <span className="h-2 w-2 rounded-full bg-muted" />
+            )}
+          </div>
+          <div className="flex items-center justify-between rounded-lg border border-ink/10 px-4 py-2.5 dark:border-white/10">
+            <span className="text-sm text-muted dark:text-muted-dark">{t('popup.ready.opponent')}</span>
+            {opponentReady ? (
+              <span className="text-xs font-semibold text-success">{t('popup.ready.opponentIsReady')}</span>
+            ) : (
+              <span className="text-xs text-muted dark:text-muted-dark">{t('popup.ready.waitingForOpponent')}</span>
+            )}
+          </div>
+        </div>
+        {!iAmReady ? (
+          <motion.button
+            type="button"
+            className="btn-primary w-full"
+            onClick={onReady}
+            whileHover={{ y: -1 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            {t('popup.ready.ready')}
+          </motion.button>
+        ) : (
+          <div className="flex w-full flex-col items-center gap-3">
+            <p className="text-sm text-muted dark:text-muted-dark animate-pulse">
+              {t('popup.ready.waitingForOpponent')}
+            </p>
+            <button type="button" className="btn-ghost text-sm" onClick={onUnready}>
+              {t('popup.ready.unready')}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CountdownOverlay({ countdown }: { countdown: number | null }) {
+  if (countdown === null) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <motion.div
+        key={countdown}
+        initial={{ scale: 1.6, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.6, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        className="flex flex-col items-center gap-3"
+      >
+        <span className="font-display text-[8rem] font-bold leading-none text-white drop-shadow-2xl">
+          {countdown}
+        </span>
+      </motion.div>
+    </div>
+  );
+}
+
+function OpponentDisconnectedBanner() {
+  const { t } = useTranslation();
+  return (
+    <div className="fixed top-20 left-1/2 z-40 -translate-x-1/2 rounded-xl border border-danger/40 bg-danger/10 px-5 py-3 text-sm font-medium text-danger backdrop-blur-md">
+      {t('popup.disconnected.opponentLeft')}
+    </div>
   );
 }
 

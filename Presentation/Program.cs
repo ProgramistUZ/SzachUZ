@@ -1,5 +1,7 @@
 using Application.Configuration;
 using Infrastructure.Configuration;
+using Infrastructure.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using Presentation.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<IHubContext<ChessHubBase>, ChessHubContextBridge>();
 
 builder.Services.AddCors(options =>
 {

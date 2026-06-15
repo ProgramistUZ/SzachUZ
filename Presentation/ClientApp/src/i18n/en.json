@@ -5,7 +5,7 @@
   "topbar": {
     "join": "Join",
     "code": "Code",
-    "settings": "Settings",
+    "settings": "New Game",
     "language": "Language",
     "theme": {
       "light": "Light mode",
@@ -58,13 +58,32 @@
       "copied": "Copied!",
       "close": "Close"
     },
+    "ready": {
+      "title": "Both players connected!",
+      "hint": "Click Ready when you're set to play.",
+      "ready": "Ready!",
+      "waitingForOpponent": "Waiting…",
+      "youAreReady": "Ready",
+      "opponentIsReady": "Ready",
+      "you": "You",
+      "opponent": "Opponent",
+      "unready": "Cancel"
+    },
     "winner": {
-      "white": "White wins!",
-      "black": "Black wins!",
-      "blackSurprise": "??? wins!",
+      "youWin": "You win!",
+      "youLose": "You lose!",
       "draw": "Draw",
       "rematch": "Rematch",
-      "close": "Close"
+      "close": "Close",
+      "reason": {
+        "timeout": "Time's up!"
+      }
+    },
+    "countdown": {
+      "starting": "Starting in"
+    },
+    "disconnected": {
+      "opponentLeft": "Opponent disconnected — waiting for reconnect…"
     }
   },
   "chat": {

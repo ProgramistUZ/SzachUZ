@@ -94,6 +94,21 @@ public class GameService : IGameService
         return await _gameRepository.CheckPlayerColor(gameId, connectionId);
     }
 
+    public async Task<bool> SetPlayerReady(Guid gameId, string connectionId)
+    {
+        return await _gameRepository.SetPlayerReadyAsync(gameId, connectionId);
+    }
+
+    public async Task<bool> UnsetPlayerReady(Guid gameId, string connectionId)
+    {
+        return await _gameRepository.UnsetPlayerReadyAsync(gameId, connectionId);
+    }
+
+    public async Task<Guid?> GetGameIdByConnection(string connectionId)
+    {
+        return await _gameRepository.GetGameIdByConnectionAsync(connectionId);
+    }
+
 
     // Gameplay
     public async Task<bool> MakeMove(Guid gameId, Position from, Position to)

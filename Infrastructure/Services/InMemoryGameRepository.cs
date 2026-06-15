@@ -9,6 +9,7 @@ public class InMemoryGameRepository : IGameRepository
     private readonly ConcurrentDictionary<Guid, ChessGame> _games = new();
     private readonly ConcurrentDictionary<string, Guid> _joinCodesGames = new();
     private readonly ConcurrentDictionary<Guid, Dictionary<string, Color>> _gamesPlayers = new();
+    private readonly ConcurrentDictionary<Guid, HashSet<string>> _readyPlayers = new();
 
     public Task<ChessGame?> GetGamesByIdAsync(Guid id)
     {
@@ -49,7 +50,43 @@ public class InMemoryGameRepository : IGameRepository
             throw new InvalidOperationException("Could not initialize player list");
         }
 
+        _readyPlayers.TryAdd(game.GameId, new HashSet<string>());
         return Task.CompletedTask;
+    }
+
+    public Task<bool> SetPlayerReadyAsync(Guid gameId, string connectionId)
+    {
+        if (!_readyPlayers.TryGetValue(gameId, out var ready))
+            return Task.FromResult(false);
+
+        lock (ready)
+        {
+            ready.Add(connectionId);
+            if (!_gamesPlayers.TryGetValue(gameId, out var players))
+                return Task.FromResult(false);
+            return Task.FromResult(ready.Count >= players.Count && players.Count >= 2);
+        }
+    }
+
+    public Task<Guid?> GetGameIdByConnectionAsync(string connectionId)
+    {
+        foreach (var (gameId, players) in _gamesPlayers)
+        {
+            if (players.ContainsKey(connectionId))
+                return Task.FromResult<Guid?>(gameId);
+        }
+        return Task.FromResult<Guid?>(null);
+    }
+
+    public Task<bool> UnsetPlayerReadyAsync(Guid gameId, string connectionId)
+    {
+        if (!_readyPlayers.TryGetValue(gameId, out var ready))
+            return Task.FromResult(false);
+
+        lock (ready)
+        {
+            return Task.FromResult(ready.Remove(connectionId));
+        }
     }
 
     public Task<bool> RemoveAsync(Guid id)

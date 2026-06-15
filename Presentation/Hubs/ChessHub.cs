@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Presentation.Hubs;
 
+
 public class ChessHub : ChessHubBase
 {
     private const int LOBBY_SIZE = 2;
@@ -51,7 +52,8 @@ public class ChessHub : ChessHubBase
                 return;
             }
 
-            if (players.Count() >= LOBBY_SIZE && !players.ContainsKey(Context.ConnectionId.ToString()))
+            var isRejoin = players.ContainsKey(Context.ConnectionId);
+            if (players.Count >= LOBBY_SIZE && !isRejoin)
             {
                 _logger.LogDebug("[{Method}]: Game {gameId} is full, caller {id}", nameof(JoinGame), game.GameId,
                     Context.ConnectionId);
@@ -68,6 +70,14 @@ public class ChessHub : ChessHubBase
                 gameId = game.GameId,
                 color = color.ToString().ToLower()
             });
+
+            if (isRejoin)
+            {
+                _logger.LogInformation("[{Method}]: Player {id} rejoined game {gameId}", nameof(JoinGame), Context.ConnectionId, game.GameId);
+                await SendGameState(game, color);
+                return;
+            }
+
             await Clients.Group(game.GameId.ToString()).SendAsync("PlayerJoined", Context.ConnectionId);
 
             _logger.LogInformation("[{Method}]: Game {gameId} joined by player {id}", nameof(JoinGame), game.GameId,
@@ -174,14 +184,77 @@ public class ChessHub : ChessHubBase
     }
 
 
-    private async Task CheckForStart(ChessGame game, Dictionary<string, Color> players)
+    public async Task PlayerUnready(Guid gameId)
     {
-        if (players.Count() == LOBBY_SIZE)
+        var game = await _gameService.GetGameByGuid(gameId);
+        if (game == null)
+        {
+            await Clients.Caller.SendAsync("Error", "Game does not exist");
+            return;
+        }
+
+        await _gameService.UnsetPlayerReady(gameId, Context.ConnectionId);
+        await Clients.OthersInGroup(gameId.ToString()).SendAsync("PlayerUnready", Context.ConnectionId);
+        _logger.LogInformation("[{Method}]: Player {id} unready in game {gameId}", nameof(PlayerUnready), Context.ConnectionId, gameId);
+    }
+
+    public async Task PlayerReady(Guid gameId)
+    {
+        var game = await _gameService.GetGameByGuid(gameId);
+        if (game == null)
+        {
+            await Clients.Caller.SendAsync("Error", "Game does not exist");
+            return;
+        }
+
+        var allReady = await _gameService.SetPlayerReady(gameId, Context.ConnectionId);
+
+        await Clients.OthersInGroup(gameId.ToString()).SendAsync("PlayerReady", Context.ConnectionId);
+        _logger.LogInformation("[{Method}]: Player {id} ready in game {gameId}", nameof(PlayerReady), Context.ConnectionId, gameId);
+
+        if (allReady)
         {
             game.StartGame();
-            _logger.LogInformation("[{Method}]: Game {gameId} started", nameof(JoinGame), game.GameId);
-
-            await game.StartTimers(_timerNotifer);
+            _logger.LogInformation("[{Method}]: Game {gameId} started", nameof(PlayerReady), gameId);
+            _ = game.StartTimers(_timerNotifer);
         }
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        var gameId = await _gameService.GetGameIdByConnection(Context.ConnectionId);
+        if (gameId.HasValue)
+        {
+            await _timerNotifer.NotifyPlayerDisconnectedAsync(gameId.Value);
+            _logger.LogInformation("[{Method}]: Player {id} disconnected from game {gameId}", nameof(OnDisconnectedAsync), Context.ConnectionId, gameId.Value);
+        }
+        await base.OnDisconnectedAsync(exception);
+    }
+
+    private async Task CheckForStart(ChessGame game, Dictionary<string, Color> players)
+    {
+        if (players.Count == LOBBY_SIZE)
+        {
+            await Clients.Group(game.GameId.ToString()).SendAsync("LobbyFull");
+        }
+    }
+
+    private async Task SendGameState(ChessGame game, Color playerColor)
+    {
+        var gameIdStr = game.GameId.ToString();
+        await Clients.Caller.SendAsync("GameState", new
+        {
+            gameId = game.GameId,
+            color = playerColor.ToString().ToLower(),
+            isActive = game.IsActive,
+            isFinished = game.IsFinished,
+            gameLength = (int)game.GameLength.TotalSeconds,
+            whiteTime = (int)game.WhiteTimeLeft.TotalSeconds,
+            blackTime = (int)game.BlackTimeLeft.TotalSeconds,
+            currentPlayer = game.CurrentPlayer.ToString().ToLower(),
+            board = game.GetBoard(),
+        });
+        await _timerNotifer.NotifyPlayerReconnectedAsync(game.GameId);
+        _logger.LogInformation("[{Method}]: Sent game state to reconnected player in game {gameId}", nameof(SendGameState), game.GameId);
     }
 }

@@ -40,6 +40,28 @@ export interface UpdateTimerPayload {
   timeLeft: number;
 }
 
+export interface GameStartedPayload {
+  currentPlayer: Color;
+  gameLength: number;
+}
+
+export interface GameOverPayload {
+  winner: Color;
+  reason: string;
+}
+
+export interface GameStatePayload {
+  gameId: string;
+  color: Color;
+  isActive: boolean;
+  isFinished: boolean;
+  gameLength: number;
+  whiteTime: number;
+  blackTime: number;
+  currentPlayer: Color;
+  board: BoardState;
+}
+
 export type HubServerToClient = {
   GameCreated: (data: GameCreatedPayload) => void;
   Joined: (data: JoinedPayload) => void;

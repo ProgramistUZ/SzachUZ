@@ -5,6 +5,9 @@ import type {
   BoardState,
   Color,
   GameCreatedPayload,
+  GameOverPayload,
+  GameStartedPayload,
+  GameStatePayload,
   JoinedPayload,
   PieceCode,
   PositionDto,
@@ -28,12 +31,19 @@ export interface ChessHubState {
   playerColor: Color;
   whiteTime: number;
   blackTime: number;
+  gameLength: number;
   whoseTurn: Color;
+  lobbyFull: boolean;
+  iAmReady: boolean;
+  opponentReady: boolean;
+  opponentDisconnected: boolean;
+  countdown: number | null;
   board: BoardState;
   possibleMoves: PositionDto[];
   lastMove: { from: PositionDto; to: PositionDto } | null;
   messages: ChatMessage[];
   winner: Color | 'draw' | null;
+  winReason: string | null;
   errorMessage: string | null;
 }
 
@@ -44,10 +54,21 @@ type Action =
   | { type: 'gameCreated'; payload: GameCreatedPayload }
   | { type: 'joined'; payload: JoinedPayload }
   | { type: 'playerJoined' }
+  | { type: 'lobbyFull' }
+  | { type: 'iAmReady' }
+  | { type: 'iAmUnready' }
+  | { type: 'opponentReady' }
+  | { type: 'opponentUnready' }
+  | { type: 'gameStarted'; payload: GameStartedPayload }
   | { type: 'boardUpdate'; payload: BoardState }
   | { type: 'movesReceived'; payload: PositionDto[] }
   | { type: 'clearPossibleMoves' }
   | { type: 'timerUpdate'; payload: UpdateTimerPayload }
+  | { type: 'gameOver'; payload: GameOverPayload }
+  | { type: 'gameState'; payload: GameStatePayload }
+  | { type: 'countdown'; payload: number }
+  | { type: 'playerDisconnected' }
+  | { type: 'playerReconnected' }
   | { type: 'message'; payload: string }
   | { type: 'error'; payload: string }
   | { type: 'clearError' }
@@ -62,12 +83,19 @@ const INITIAL_STATE: ChessHubState = {
   playerColor: 'white',
   whiteTime: 300,
   blackTime: 300,
+  gameLength: 300,
   whoseTurn: 'white',
+  lobbyFull: false,
+  iAmReady: false,
+  opponentReady: false,
+  opponentDisconnected: false,
+  countdown: null,
   board: INITIAL_BOARD,
   possibleMoves: [],
   lastMove: null,
   messages: [],
   winner: null,
+  winReason: null,
   errorMessage: null,
 };
 
@@ -108,7 +136,29 @@ function reducer(state: ChessHubState, action: Action): ChessHubState {
         errorMessage: null,
       };
     case 'playerJoined':
-      return { ...state, status: 'playing' };
+      return { ...state, status: 'lobby', lobbyFull: true };
+    case 'lobbyFull':
+      return { ...state, lobbyFull: true };
+    case 'iAmReady':
+      return { ...state, iAmReady: true };
+    case 'iAmUnready':
+      return { ...state, iAmReady: false };
+    case 'opponentReady':
+      return { ...state, opponentReady: true };
+    case 'opponentUnready':
+      return { ...state, opponentReady: false };
+    case 'gameStarted': {
+      const { gameLength, currentPlayer } = action.payload;
+      return {
+        ...state,
+        whiteTime: gameLength,
+        blackTime: gameLength,
+        gameLength,
+        whoseTurn: currentPlayer,
+        status: 'playing',
+        countdown: null,
+      };
+    }
     case 'boardUpdate': {
       const board = action.payload;
       const whiteAlive = findKingThreshold(board, 'white');
@@ -144,6 +194,37 @@ function reducer(state: ChessHubState, action: Action): ChessHubState {
         whoseTurn: player,
       };
     }
+    case 'gameOver':
+      return {
+        ...state,
+        winner: action.payload.winner,
+        winReason: action.payload.reason,
+        status: 'ended',
+        countdown: null,
+      };
+    case 'gameState': {
+      const p = action.payload;
+      return {
+        ...state,
+        gameId: p.gameId,
+        playerColor: p.color,
+        gameLength: p.gameLength,
+        whiteTime: p.whiteTime,
+        blackTime: p.blackTime,
+        whoseTurn: p.currentPlayer,
+        board: p.board as BoardState,
+        status: p.isFinished ? 'ended' : p.isActive ? 'playing' : 'lobby',
+        lobbyFull: true,
+        opponentDisconnected: false,
+        errorMessage: null,
+      };
+    }
+    case 'countdown':
+      return { ...state, countdown: action.payload };
+    case 'playerDisconnected':
+      return { ...state, opponentDisconnected: true };
+    case 'playerReconnected':
+      return { ...state, opponentDisconnected: false };
     case 'message':
       return {
         ...state,
@@ -169,6 +250,8 @@ export interface UseChessHub {
   state: ChessHubState;
   createGame: (color: Color, gameLength: number) => Promise<void>;
   joinGame: (code: string) => Promise<void>;
+  setReady: () => Promise<void>;
+  unsetReady: () => Promise<void>;
   makeMove: (from: PositionDto, to: PositionDto) => Promise<void>;
   getMoves: (from: PositionDto | null) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
@@ -205,6 +288,18 @@ export function useChessHub(): UseChessHub {
       log('PlayerJoined', id);
       dispatch({ type: 'playerJoined' });
     });
+    connection.on('LobbyFull', () => {
+      log('LobbyFull', null);
+      dispatch({ type: 'lobbyFull' });
+    });
+    connection.on('PlayerReady', (_id: string) => {
+      log('PlayerReady', _id);
+      dispatch({ type: 'opponentReady' });
+    });
+    connection.on('PlayerUnready', (_id: string) => {
+      log('PlayerUnready', _id);
+      dispatch({ type: 'opponentUnready' });
+    });
     connection.on('MoveMade', (board: BoardState) => {
       log('MoveMade', board);
       dispatch({ type: 'boardUpdate', payload: board });
@@ -213,9 +308,33 @@ export function useChessHub(): UseChessHub {
       log('ReciveMoves', moves);
       dispatch({ type: 'movesReceived', payload: moves });
     });
+    connection.on('GameStarted', (data: GameStartedPayload) => {
+      log('GameStarted', data);
+      dispatch({ type: 'gameStarted', payload: data });
+    });
     connection.on('UpdateTimer', (data: UpdateTimerPayload) => {
       log('UpdateTimer', data);
       dispatch({ type: 'timerUpdate', payload: data });
+    });
+    connection.on('GameOver', (data: GameOverPayload) => {
+      log('GameOver', data);
+      dispatch({ type: 'gameOver', payload: data });
+    });
+    connection.on('GameState', (data: GameStatePayload) => {
+      log('GameState', data);
+      dispatch({ type: 'gameState', payload: data });
+    });
+    connection.on('Countdown', (n: number) => {
+      log('Countdown', n);
+      dispatch({ type: 'countdown', payload: n });
+    });
+    connection.on('PlayerDisconnected', () => {
+      log('PlayerDisconnected', null);
+      dispatch({ type: 'playerDisconnected' });
+    });
+    connection.on('PlayerReconnected', () => {
+      log('PlayerReconnected', null);
+      dispatch({ type: 'playerReconnected' });
     });
     connection.on('ReciveMessage', (msg: string) => {
       log('ReciveMessage', msg);
@@ -294,6 +413,32 @@ export function useChessHub(): UseChessHub {
     [ensureConnected],
   );
 
+  const setReady = useCallback<UseChessHub['setReady']>(async () => {
+    const connection = connectionRef.current;
+    const gameId = state.gameId;
+    if (!connection || !gameId) return;
+    dispatch({ type: 'iAmReady' });
+    try {
+      await connection.invoke('PlayerReady', gameId);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'generic';
+      dispatch({ type: 'error', payload: msg });
+    }
+  }, [state.gameId]);
+
+  const unsetReady = useCallback<UseChessHub['unsetReady']>(async () => {
+    const connection = connectionRef.current;
+    const gameId = state.gameId;
+    if (!connection || !gameId) return;
+    dispatch({ type: 'iAmUnready' });
+    try {
+      await connection.invoke('PlayerUnready', gameId);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'generic';
+      dispatch({ type: 'error', payload: msg });
+    }
+  }, [state.gameId]);
+
   const makeMove = useCallback<UseChessHub['makeMove']>(
     async (from, to) => {
       const connection = connectionRef.current;
@@ -344,7 +489,7 @@ export function useChessHub(): UseChessHub {
   const resetError = useCallback(() => dispatch({ type: 'clearError' }), []);
 
   return useMemo(
-    () => ({ state, createGame, joinGame, makeMove, getMoves, sendMessage, resetError }),
-    [state, createGame, joinGame, makeMove, getMoves, sendMessage, resetError],
+    () => ({ state, createGame, joinGame, setReady, unsetReady, makeMove, getMoves, sendMessage, resetError }),
+    [state, createGame, joinGame, setReady, unsetReady, makeMove, getMoves, sendMessage, resetError],
   );
 }

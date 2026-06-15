@@ -12,4 +12,7 @@ public interface IGameRepository
     Task<bool> RemoveAsync(Guid id);
     Task<bool> CheckPlayerTurn(Guid gameId, string connectionId);
     Task<Color> CheckPlayerColor(Guid gameId, string connectionId);
+    Task<bool> SetPlayerReadyAsync(Guid gameId, string connectionId);
+    Task<bool> UnsetPlayerReadyAsync(Guid gameId, string connectionId);
+    Task<Guid?> GetGameIdByConnectionAsync(string connectionId);
 }

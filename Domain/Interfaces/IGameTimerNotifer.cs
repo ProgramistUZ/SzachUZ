@@ -5,6 +5,9 @@ namespace Domain.Interfaces;
 public interface IGameTimerNotifer
 {
     Task NotifyTimerUpdateAsync(Guid gameId, Color player, TimeSpan timeLeft);
-    Task NotifyTimeoutAsync(Guid gameId, Color player);
-    Task NotifyGameStartedAsync(Guid gameId, Color currentPlayer);
+    Task NotifyGameStartedAsync(Guid gameId, Color currentPlayer, TimeSpan gameLength);
+    Task NotifyGameOverAsync(Guid gameId, Color winner, string reason);
+    Task NotifyCountdownAsync(Guid gameId, int secondsLeft);
+    Task NotifyPlayerDisconnectedAsync(Guid gameId);
+    Task NotifyPlayerReconnectedAsync(Guid gameId);
 }

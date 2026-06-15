@@ -16,6 +16,9 @@ public interface IGameService
     Task<Dictionary<string, Color>?> GetPlayers(Guid gameId);
     Task<bool> CheckPlayerTurn(Guid gameId, string ConnectionId);
     Task<Color> CheckPlayerColor(Guid gameId, string connectionId);
+    Task<bool> SetPlayerReady(Guid gameId, string connectionId);
+    Task<bool> UnsetPlayerReady(Guid gameId, string connectionId);
+    Task<Guid?> GetGameIdByConnection(string connectionId);
 
     // Gameplay
     Task<bool> MakeMove(Guid gameId, Position from, Position to);

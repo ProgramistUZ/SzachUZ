@@ -12,9 +12,10 @@ interface TimerProps {
   seconds: number;
   isActive: boolean;
   totalSeconds?: number;
+  inactive?: boolean;
 }
 
-export function Timer({ color, seconds, isActive, totalSeconds = 300 }: TimerProps) {
+export function Timer({ color, seconds, isActive, totalSeconds = 300, inactive = false }: TimerProps) {
   const { t } = useTranslation();
   const { surprise } = useEasterEgg();
   const isLow = seconds <= LOW_TIME_THRESHOLD_SECONDS;
@@ -87,7 +88,7 @@ export function Timer({ color, seconds, isActive, totalSeconds = 300 }: TimerPro
             isLow && isActive ? 'text-danger' : 'text-ink dark:text-ink-dark',
           )}
         >
-          {formatTime(safe)}
+          {inactive ? '--:--' : formatTime(safe)}
         </span>
       </div>
       {isActive && (
