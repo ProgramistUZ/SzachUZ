@@ -10,9 +10,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![SignalR](https://img.shields.io/badge/SignalR-realtime-00A86B?style=for-the-badge&logo=microsoft&logoColor=white)](https://dotnet.microsoft.com/apps/aspnet/signalr)
 
-[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](./Presentation/Dockerfile)
 [![License](https://img.shields.io/github/license/ProgramistUZ/SzachUZ?style=for-the-badge&color=8b5cf6)](./LICENSE)
-[![Last Commit](https://img.shields.io/github/last-commit/ProgramistUZ/SzachUZ?style=for-the-badge&color=8b5cf6)](https://github.com/ProgramistUZ/SzachUZ/commits/master)
 
 *A real-time multiplayer chess application built as a university project.*
 
@@ -42,7 +40,6 @@
 | Real-time | ASP.NET Core SignalR (WebSockets) |
 | State | `useReducer` + custom `useChessHub` hook |
 | i18n | i18next + react-i18next |
-| Containerisation | Docker + Docker Compose |
 | Testing | xUnit (backend domain & infrastructure) |
 
 ## Architecture
@@ -78,12 +75,6 @@ dotnet run --project Presentation
 ```
 
 The app will be available at `http://localhost:3000`.
-
-### Run with Docker
-
-```bash
-docker compose up --build
-```
 
 ### Run tests
 
